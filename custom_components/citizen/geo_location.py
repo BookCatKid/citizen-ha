@@ -113,7 +113,7 @@ class CitizenIncidentGeoLocation(CoordinatorEntity[CitizenCoordinator], Geolocat
             self._attr_distance = location_distance(
                 self.coordinator.latitude, self.coordinator.longitude,
                 position.latitude, position.longitude,
-            )
+            ) / 1000
         else:
             self._attr_distance = None
         self._attr_icon = CATEGORY_ICONS.get(marker.category or "", DEFAULT_ICON)
@@ -200,7 +200,7 @@ class CitizenHistoricalGeoLocation(CoordinatorEntity[CitizenCoordinator], Geoloc
             self._attr_distance = location_distance(
                 self.coordinator.latitude, self.coordinator.longitude,
                 position.latitude, position.longitude,
-            )
+            ) / 1000
         else:
             self._attr_distance = None
         self._attr_extra_state_attributes = {

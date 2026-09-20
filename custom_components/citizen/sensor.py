@@ -44,10 +44,11 @@ class _CitizenBaseSensor(CoordinatorEntity[CitizenCoordinator], SensorEntity):
         position = tracked.marker.position
         if position is None:
             return None
+        # location_distance() returns meters.
         return location_distance(
             self.coordinator.latitude, self.coordinator.longitude,
             position.latitude, position.longitude,
-        )
+        ) / 1000
 
 
 class CitizenIncidentCountSensor(_CitizenBaseSensor):
