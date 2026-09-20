@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Citizen incident feed",
+        "description": "Watch Citizen incidents within a radius of a point. Defaults to your Home Assistant location.",
+        "data": {
+          "latitude": "[%key:common::config_flow::data::latitude%]",
+          "longitude": "[%key:common::config_flow::data::longitude%]",
+          "radius": "Radius (km)",
+          "scan_interval": "Update interval (seconds)"
+        },
+        "data_description": {
+          "radius": "Distance around the point to watch, 0.1-50 km",
+          "scan_interval": "How often to poll Citizen. Tiles are cached ~60s server-side; faster polling adds little."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This location is already configured"
+    }
+  }
+}

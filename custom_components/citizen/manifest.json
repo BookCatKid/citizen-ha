@@ -1,0 +1,13 @@
+{
+  "domain": "citizen",
+  "name": "Citizen",
+  "codeowners": ["@BookCatKid"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/BookCatKid/citizen-ha",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/BookCatKid/citizen-ha/issues",
+  "requirements": ["pycitizen==0.1.0"],
+  "version": "0.1.0"
+}
