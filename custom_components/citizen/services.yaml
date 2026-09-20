@@ -1,0 +1,57 @@
+get_incident:
+  name: Get incident details
+  description: >-
+    Fetch full details for a single Citizen incident by ID. Returns address,
+    responding agency, update narrative, stats, and timestamps as response data.
+  fields:
+    incident_id:
+      required: true
+      selector:
+        text:
+      name: Incident ID
+      description: >-
+        Citizen incident ID, e.g. from a geo_location entity's incident_id
+        attribute.
+
+get_incidents:
+  name: Get incidents in area
+  description: >-
+    Fetch incidents around an arbitrary point. Defaults to the configured
+    location and a 2 km radius. Returns a distance-sorted incident list as
+    response data.
+  fields:
+    latitude:
+      selector:
+        number:
+          min: -90
+          max: 90
+          step: "any"
+          mode: box
+      name: Latitude
+      description: Center point. Defaults to the configured location.
+    longitude:
+      selector:
+        number:
+          min: -180
+          max: 180
+          step: "any"
+          mode: box
+      name: Longitude
+      description: Center point. Defaults to the configured location.
+    radius_km:
+      default: 2.0
+      selector:
+        number:
+          min: 0.1
+          max: 50
+          step: 0.1
+          unit_of_measurement: km
+          mode: box
+      name: Radius
+      description: Search radius around the point.
+    include_historical:
+      default: false
+      selector:
+        boolean:
+      name: Include past incidents
+      description: Also include the historical incidents tile layer.

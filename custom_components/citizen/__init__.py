@@ -25,10 +25,17 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
 )
 from .coordinator import CitizenCoordinator
+from .services import async_remove_services, async_setup_services
 
 PLATFORMS: list[Platform] = [Platform.GEO_LOCATION, Platform.SENSOR]
 
 type CitizenConfigEntry = ConfigEntry[CitizenCoordinator]
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Register Citizen service actions."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CitizenConfigEntry) -> bool:
@@ -56,4 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CitizenConfigEntry) -> b
 
 async def async_unload_entry(hass: HomeAssistant, entry: CitizenConfigEntry) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded:
+        async_remove_services(hass, entry.entry_id)
+    return unloaded

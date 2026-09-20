@@ -75,6 +75,48 @@ geo_location_sources:
   - citizen_historical # past incidents (omit for live-only)
 ```
 
+## Actions for automations
+
+Two actions return **response data** for use in automations/scripts:
+
+### `citizen.get_incidents` — query any area
+
+```yaml
+actions:
+  - action: citizen.get_incidents
+    data:
+      latitude: 32.7157      # optional; defaults to configured location
+      longitude: -117.1611
+      radius_km: 3
+      include_historical: true
+    response_variable: result
+  - action: notify.notify
+    data:
+      message: >-
+        {{ result.count }} incidents. Nearest:
+        {{ result.incidents[0].title }} at {{ result.incidents[0].distance_km }} km
+```
+
+Each item has `incident_id`, `title`, `latitude`, `longitude`, `distance_km`, `category`, `severity`, `lifecycle_state`, `timestamp`, and counts.
+
+### `citizen.get_incident` — full details for one incident
+
+```yaml
+actions:
+  - action: citizen.get_incident
+    data:
+      incident_id: "{{ state_attr('sensor.citizen_nearest_incident', 'incident_id') }}"
+    response_variable: detail
+  - action: notify.notify
+    data:
+      message: >-
+        {{ detail.incident.title }} at {{ detail.incident.address }}
+        ({{ detail.incident.responding_agency }}) —
+        {{ detail.incident.updates[-1].text }}
+```
+
+Returns `address`, `responding_agency`, `lifecycle_state`/`lifecycle_subtitle`, `users_notified`, `stats`, the full `updates` narrative list, `thumbnail`, and timestamps.
+
 ## How it works
 
 The official Citizen app renders its map from public Mapbox vector tiles at `data.sp0n.io/v1/tile/incidents/{x}/{y}/{z}.pbf` — no authentication required (verified by reverse-engineering the Android app; see `research/CITIZEN_API_REPORT.md` in the pycitizen repo). `pycitizen` decodes those tiles, deduplicates markers, and tracks lifecycle transitions; this integration polls that feed on your configured interval.
