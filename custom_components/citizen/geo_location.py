@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.components.geo_location import GeoLocationEntity
+from homeassistant.components.geo_location import GeolocationEvent
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -35,8 +35,6 @@ from .const import (
 from .coordinator import CitizenCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-SOURCE = "citizen"
 
 
 async def async_setup_entry(
@@ -65,10 +63,11 @@ async def async_setup_entry(
     _check_for_new_incidents()
 
 
-class CitizenIncidentGeoLocation(CoordinatorEntity[CitizenCoordinator], GeoLocationEntity):
+class CitizenIncidentGeoLocation(CoordinatorEntity[CitizenCoordinator], GeolocationEvent):
     """A geo_location entity tracking one Citizen incident."""
 
     _attr_icon = "mdi:alarm-light"
+    _attr_source = "citizen"
 
     def __init__(self, coordinator: CitizenCoordinator, tracked: TrackedIncident) -> None:
         super().__init__(coordinator)
@@ -121,7 +120,3 @@ class CitizenIncidentGeoLocation(CoordinatorEntity[CitizenCoordinator], GeoLocat
             ATTR_HAS_VOD: marker.has_vod,
             "feed_state": tracked.state.value,
         }
-
-    @property
-    def source(self) -> str:
-        return SOURCE
