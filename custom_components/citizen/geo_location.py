@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.location import distance as location_distance
-from pycitizen import TrackedIncident
+from pycitizen import HistoricalIncident, TrackedIncident
 
 from . import CitizenConfigEntry
 from .const import (
@@ -48,13 +48,22 @@ async def async_setup_entry(
 
     @callback
     def _check_for_new_incidents() -> None:
-        feed_ids = set(coordinator.feed.incidents)
+        current_ids = set(coordinator.feed.incidents) | set(coordinator.historical)
         # Forget ids that left the feed so a reappearing incident re-adds.
-        known_ids.intersection_update(feed_ids)
+        known_ids.intersection_update(current_ids)
         new_entities = [
             CitizenIncidentGeoLocation(coordinator, tracked)
             for incident_id, tracked in coordinator.feed.incidents.items()
             if incident_id not in known_ids and not known_ids.add(incident_id)
+        ]
+        new_entities += [
+            CitizenHistoricalGeoLocation(coordinator, historical)
+            for incident_id, historical in coordinator.historical.items()
+            if (
+                incident_id not in known_ids
+                and incident_id not in coordinator.feed.incidents
+                and not known_ids.add(incident_id)
+            )
         ]
         if new_entities:
             async_add_entities(new_entities)
@@ -119,4 +128,59 @@ class CitizenIncidentGeoLocation(CoordinatorEntity[CitizenCoordinator], Geolocat
             ATTR_VIEW_COUNT: marker.view_count,
             ATTR_HAS_VOD: marker.has_vod,
             "feed_state": tracked.state.value,
+        }
+
+
+class CitizenHistoricalGeoLocation(CoordinatorEntity[CitizenCoordinator], GeolocationEvent):
+    """A geo_location entity for a past (historical-tile) incident.
+
+    Uses a separate ``citizen_historical`` source so map cards can show or
+    hide historical incidents independently of live ones.
+    """
+
+    _attr_icon = "mdi:history"
+    _attr_source = "citizen_historical"
+
+    def __init__(self, coordinator: CitizenCoordinator, incident: HistoricalIncident) -> None:
+        super().__init__(coordinator)
+        self._incident_id = incident.incident_id
+        self._attr_unique_id = f"{DOMAIN}_hist_{incident.incident_id}"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, f"{coordinator.latitude}_{coordinator.longitude}")},
+            "name": f"Citizen ({coordinator.latitude:.4f}, {coordinator.longitude:.4f})",
+            "manufacturer": "Citizen",
+        }
+        self._update(incident)
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        incident = self.coordinator.historical.get(self._incident_id)
+        if incident is None:
+            self.hass.async_create_task(self.async_remove(force_remove=True))
+            return
+        self._update(incident)
+        super()._handle_coordinator_update()
+
+    def _update(self, incident: HistoricalIncident) -> None:
+        position = incident.position
+        name = incident.title or f"Past incident {incident.incident_id}"
+        if incident.time_frame:
+            name = f"{name} ({incident.time_frame})"
+        self._attr_name = name
+        self._attr_latitude = position.latitude if position else None
+        self._attr_longitude = position.longitude if position else None
+        if position:
+            self._attr_distance = location_distance(
+                self.coordinator.latitude, self.coordinator.longitude,
+                position.latitude, position.longitude,
+            )
+        else:
+            self._attr_distance = None
+        self._attr_extra_state_attributes = {
+            ATTR_INCIDENT_ID: incident.incident_id,
+            "time_frame": incident.time_frame,
+            ATTR_COMMENT_COUNT: incident.comment_count,
+            ATTR_SHARE_COUNT: incident.share_count,
+            ATTR_VIEW_COUNT: incident.view_count,
+            "updated_at": incident.updated_at.isoformat() if incident.updated_at else None,
         }

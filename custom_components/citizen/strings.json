@@ -8,11 +8,13 @@
           "latitude": "[%key:common::config_flow::data::latitude%]",
           "longitude": "[%key:common::config_flow::data::longitude%]",
           "radius": "Radius (km)",
-          "scan_interval": "Update interval (seconds)"
+          "scan_interval": "Update interval (seconds)",
+          "include_historical": "Include past incidents"
         },
         "data_description": {
           "radius": "Distance around the point to watch, 0.1-50 km",
-          "scan_interval": "How often to poll Citizen. Tiles are cached ~60s server-side; faster polling adds little."
+          "scan_interval": "How often to poll Citizen. Tiles are cached ~60s server-side; faster polling adds little.",
+          "include_historical": "Also show older incidents from the historical tile layer (citizen_historical map source)"
         }
       }
     },

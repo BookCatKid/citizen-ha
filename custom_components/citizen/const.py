@@ -15,6 +15,9 @@ DEFAULT_SCAN_INTERVAL: Final = timedelta(seconds=60)
 #: Keep an incident entity this long after it leaves the tiles.
 DEFAULT_EXPIRE_AFTER: Final = 900.0
 
+CONF_INCLUDE_HISTORICAL: Final = "include_historical"
+DEFAULT_INCLUDE_HISTORICAL: Final = True
+
 ATTR_INCIDENT_ID: Final = "incident_id"
 ATTR_CATEGORY: Final = "category"
 ATTR_SUBCATEGORY: Final = "subcategory"

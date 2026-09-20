@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 from datetime import timedelta
@@ -9,7 +10,13 @@ from typing import TYPE_CHECKING
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pycitizen import CitizenClient, CitizenError, FeedUpdate, IncidentFeed
+from pycitizen import (
+    CitizenClient,
+    CitizenError,
+    FeedUpdate,
+    HistoricalIncident,
+    IncidentFeed,
+)
 
 from .const import DEFAULT_EXPIRE_AFTER, DOMAIN
 
@@ -45,6 +52,7 @@ class CitizenCoordinator(DataUpdateCoordinator[FeedUpdate]):
         longitude: float,
         radius_km: float,
         scan_interval: timedelta,
+        include_historical: bool = True,
     ) -> None:
         super().__init__(
             hass,
@@ -57,14 +65,25 @@ class CitizenCoordinator(DataUpdateCoordinator[FeedUpdate]):
         self.latitude = latitude
         self.longitude = longitude
         self.radius_km = radius_km
+        self.include_historical = include_historical
+        self.bbox = bbox_for_radius(latitude, longitude, radius_km)
         self.feed = IncidentFeed(
             client,
-            bbox_for_radius(latitude, longitude, radius_km),
+            self.bbox,
             expire_after=DEFAULT_EXPIRE_AFTER,
         )
+        #: Past incidents from the historical_incidents tile layer.
+        self.historical: dict[str, HistoricalIncident] = {}
 
     async def _async_update_data(self) -> FeedUpdate:
         try:
+            if self.include_historical:
+                update, historical = await asyncio.gather(
+                    self.feed.update(),
+                    self.client.get_historical_incidents(self.bbox),
+                )
+                self.historical = {h.incident_id: h for h in historical}
+                return update
             return await self.feed.update()
         except CitizenError as err:
             raise UpdateFailed(f"Error fetching Citizen incidents: {err}") from err

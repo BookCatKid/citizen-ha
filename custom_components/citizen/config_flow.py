@@ -13,7 +13,13 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
 )
 
-from .const import DEFAULT_RADIUS_KM, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    CONF_INCLUDE_HISTORICAL,
+    DEFAULT_INCLUDE_HISTORICAL,
+    DEFAULT_RADIUS_KM,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
 
 
 class CitizenConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -52,6 +58,10 @@ class CitizenConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_SCAN_INTERVAL,
                         default=int(DEFAULT_SCAN_INTERVAL.total_seconds()),
                     ): vol.All(vol.Coerce(int), vol.Range(min=10, max=3600)),
+                    vol.Required(
+                        CONF_INCLUDE_HISTORICAL,
+                        default=DEFAULT_INCLUDE_HISTORICAL,
+                    ): bool,
                 }
             ),
             errors=errors,

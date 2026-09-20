@@ -16,7 +16,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pycitizen import CitizenClient
 
-from .const import DEFAULT_RADIUS_KM, DEFAULT_SCAN_INTERVAL
+from .const import (
+    CONF_INCLUDE_HISTORICAL,
+    DEFAULT_INCLUDE_HISTORICAL,
+    DEFAULT_RADIUS_KM,
+    DEFAULT_SCAN_INTERVAL,
+)
 from .coordinator import CitizenCoordinator
 
 PLATFORMS: list[Platform] = [Platform.GEO_LOCATION, Platform.SENSOR]
@@ -36,6 +41,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: CitizenConfigEntry) -> b
         longitude=entry.data[CONF_LONGITUDE],
         radius_km=entry.data.get(CONF_RADIUS, DEFAULT_RADIUS_KM),
         scan_interval=timedelta(seconds=scan_seconds),
+        include_historical=entry.data.get(
+            CONF_INCLUDE_HISTORICAL, DEFAULT_INCLUDE_HISTORICAL
+        ),
     )
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
