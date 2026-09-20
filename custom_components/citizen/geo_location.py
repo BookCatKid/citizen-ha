@@ -30,6 +30,8 @@ from .const import (
     ATTR_SHARE_COUNT,
     ATTR_SUBCATEGORY,
     ATTR_VIEW_COUNT,
+    CATEGORY_ICONS,
+    DEFAULT_ICON,
     DOMAIN,
 )
 from .coordinator import CitizenCoordinator
@@ -75,7 +77,6 @@ async def async_setup_entry(
 class CitizenIncidentGeoLocation(CoordinatorEntity[CitizenCoordinator], GeolocationEvent):
     """A geo_location entity tracking one Citizen incident."""
 
-    _attr_icon = "mdi:alarm-light"
     _attr_source = "citizen"
 
     def __init__(self, coordinator: CitizenCoordinator, tracked: TrackedIncident) -> None:
@@ -115,7 +116,8 @@ class CitizenIncidentGeoLocation(CoordinatorEntity[CitizenCoordinator], Geolocat
             )
         else:
             self._attr_distance = None
-        self._attr_extra_state_attributes = {
+        self._attr_icon = CATEGORY_ICONS.get(marker.category or "", DEFAULT_ICON)
+        attributes: dict[str, Any] = {
             ATTR_INCIDENT_ID: tracked.incident_id,
             ATTR_CATEGORY: marker.category,
             ATTR_SUBCATEGORY: marker.subcategory,
@@ -129,6 +131,31 @@ class CitizenIncidentGeoLocation(CoordinatorEntity[CitizenCoordinator], Geolocat
             ATTR_HAS_VOD: marker.has_vod,
             "feed_state": tracked.state.value,
         }
+        detail = self.coordinator.details.get(tracked.incident_id)
+        if detail is not None:
+            location_details = detail.location_details or {}
+            updates = [u for u in detail.updates if u.text]
+            attributes |= {
+                "address": location_details.get("formattedAddress") or detail.address,
+                "location": detail.location,
+                "neighborhood": detail.neighborhood,
+                "responding_agency": location_details.get("police"),
+                "lifecycle_subtitle": detail.raw.get("lifecycleStateSubtitle"),
+                "users_notified": (
+                    detail.stats.users_notified if detail.stats else None
+                ),
+                "latest_update": updates[-1].text if updates else None,
+                "latest_update_time": (
+                    updates[-1].timestamp.isoformat()
+                    if updates and updates[-1].timestamp
+                    else None
+                ),
+                "updates_count": len(updates),
+            }
+            self._attr_entity_picture = detail.map_thumbnail
+        else:
+            self._attr_entity_picture = None
+        self._attr_extra_state_attributes = attributes
 
 
 class CitizenHistoricalGeoLocation(CoordinatorEntity[CitizenCoordinator], GeolocationEvent):

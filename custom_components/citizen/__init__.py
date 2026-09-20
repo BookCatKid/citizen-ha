@@ -17,7 +17,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pycitizen import CitizenClient
 
 from .const import (
+    CONF_DETAIL_COUNT,
     CONF_INCLUDE_HISTORICAL,
+    DEFAULT_DETAIL_COUNT,
     DEFAULT_INCLUDE_HISTORICAL,
     DEFAULT_RADIUS_KM,
     DEFAULT_SCAN_INTERVAL,
@@ -44,6 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CitizenConfigEntry) -> b
         include_historical=entry.data.get(
             CONF_INCLUDE_HISTORICAL, DEFAULT_INCLUDE_HISTORICAL
         ),
+        detail_count=entry.data.get(CONF_DETAIL_COUNT, DEFAULT_DETAIL_COUNT),
     )
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator

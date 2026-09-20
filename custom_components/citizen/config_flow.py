@@ -14,7 +14,9 @@ from homeassistant.const import (
 )
 
 from .const import (
+    CONF_DETAIL_COUNT,
     CONF_INCLUDE_HISTORICAL,
+    DEFAULT_DETAIL_COUNT,
     DEFAULT_INCLUDE_HISTORICAL,
     DEFAULT_RADIUS_KM,
     DEFAULT_SCAN_INTERVAL,
@@ -62,6 +64,10 @@ class CitizenConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_INCLUDE_HISTORICAL,
                         default=DEFAULT_INCLUDE_HISTORICAL,
                     ): bool,
+                    vol.Required(
+                        CONF_DETAIL_COUNT,
+                        default=DEFAULT_DETAIL_COUNT,
+                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=25)),
                 }
             ),
             errors=errors,

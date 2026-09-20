@@ -9,12 +9,14 @@
           "longitude": "[%key:common::config_flow::data::longitude%]",
           "radius": "Radius (km)",
           "scan_interval": "Update interval (seconds)",
-          "include_historical": "Include past incidents"
+          "include_historical": "Include past incidents",
+          "detail_count": "Incidents to fetch details for"
         },
         "data_description": {
           "radius": "Distance around the point to watch, 0.1-50 km",
           "scan_interval": "How often to poll Citizen. Tiles are cached ~60s server-side; faster polling adds little.",
-          "include_historical": "Also show older incidents from the historical tile layer (citizen_historical map source)"
+          "include_historical": "Also show older incidents from the historical tile layer (citizen_historical map source)",
+          "detail_count": "Nearest N live incidents get full details: address, responding agency, latest update text. 0 disables."
         }
       }
     },

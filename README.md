@@ -8,7 +8,8 @@ Unofficial Home Assistant custom integration for [Citizen](https://citizen.com)'
 
 ## What you get
 
-- **`geo_location` entity per incident** — every incident inside your watched area appears on map cards with distance, severity, lifecycle state, and view/comment/share counts. Entities are added as incidents appear and removed when they expire.
+- **`geo_location` entity per incident** — every incident inside your watched area appears on map cards with distance, severity, lifecycle state, category icon, and view/comment/share counts. Entities are added as incidents appear and removed when they expire.
+- **Rich details for the nearest incidents** — the N closest live incidents (default 5, configurable) get full v3 details each poll: street address, responding agency (e.g. "SDPD 1 NORTHERN"), latest update narrative ("Firefighters are responding to a 911 report of…"), notification stats, and a map thumbnail image.
 - **Historical incidents** — older incidents from Citizen's separate `historical_incidents` tile layer appear as their own entities under a `citizen_historical` source (toggleable in config), so live and past incidents stay distinguishable on maps.
 - **`sensor.citizen_incidents`** — count of active incidents in the area, with per-severity/per-lifecycle breakdowns and the 10 nearest incidents as attributes.
 - **`sensor.citizen_nearest_incident`** — distance (km) to the nearest incident, with its title/severity as attributes. Ideal for proximity automations.
@@ -45,6 +46,7 @@ Copy `custom_components/citizen` into your HA `config/custom_components/` and re
 | Radius | 2 km | 0.1–50 km |
 | Update interval | 60 s | Citizen tiles are cached ~60 s server-side; faster polling adds little |
 | Include past incidents | on | adds the `citizen_historical` map source |
+| Incidents to fetch details for | 5 | nearest N get address/agency/update attrs; 0 disables extra requests |
 
 ## Example automation
 

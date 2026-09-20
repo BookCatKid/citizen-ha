@@ -10,11 +10,13 @@ from typing import TYPE_CHECKING
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util.location import distance as location_distance
 from pycitizen import (
     CitizenClient,
     CitizenError,
     FeedUpdate,
     HistoricalIncident,
+    Incident,
     IncidentFeed,
 )
 
@@ -53,6 +55,7 @@ class CitizenCoordinator(DataUpdateCoordinator[FeedUpdate]):
         radius_km: float,
         scan_interval: timedelta,
         include_historical: bool = True,
+        detail_count: int = 5,
     ) -> None:
         super().__init__(
             hass,
@@ -72,8 +75,11 @@ class CitizenCoordinator(DataUpdateCoordinator[FeedUpdate]):
             self.bbox,
             expire_after=DEFAULT_EXPIRE_AFTER,
         )
+        self.detail_count = detail_count
         #: Past incidents from the historical_incidents tile layer.
         self.historical: dict[str, HistoricalIncident] = {}
+        #: Full v3 details for the nearest live incidents, keyed by id.
+        self.details: dict[str, Incident] = {}
 
     async def _async_update_data(self) -> FeedUpdate:
         try:
@@ -83,7 +89,37 @@ class CitizenCoordinator(DataUpdateCoordinator[FeedUpdate]):
                     self.client.get_historical_incidents(self.bbox),
                 )
                 self.historical = {h.incident_id: h for h in historical}
-                return update
-            return await self.feed.update()
+            else:
+                update = await self.feed.update()
+            if self.detail_count:
+                await self._refresh_details()
+            return update
         except CitizenError as err:
             raise UpdateFailed(f"Error fetching Citizen incidents: {err}") from err
+
+    async def _refresh_details(self) -> None:
+        """Fetch v3 details for the detail_count nearest tracked incidents."""
+        positioned = [
+            t
+            for t in self.feed.incidents.values()
+            if t.marker.position is not None
+        ]
+        positioned.sort(
+            key=lambda t: location_distance(
+                self.latitude,
+                self.longitude,
+                t.marker.position.latitude,
+                t.marker.position.longitude,
+            )
+        )
+        nearest_ids = [t.incident_id for t in positioned[: self.detail_count]]
+        self.details = {k: v for k, v in self.details.items() if k in nearest_ids}
+        results = await asyncio.gather(
+            *(self.client.get_incident(iid) for iid in nearest_ids),
+            return_exceptions=True,
+        )
+        for iid, result in zip(nearest_ids, results, strict=True):
+            if isinstance(result, Incident):
+                self.details[iid] = result
+            elif isinstance(result, CitizenError):
+                _LOGGER.debug("Detail fetch failed for %s: %s", iid, result)
